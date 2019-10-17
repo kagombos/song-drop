@@ -17,7 +17,11 @@ const pool = new Pool({
 
 const server = http.createServer();
 server.listen(5000);
-//server.use(cors());
+
+app.listen(5001);
+
+app.use(cors());
+app.use(express.static('public'));
 //app.use(express.json());
 
 
@@ -39,6 +43,15 @@ const sendMessage = (json) => {
 		clients[client].sendUTF(json);
 	});
 }
+
+app.get('/sound', (req, res) => { 
+	console.log("AAAAA");
+    var url = "file://C:/Users/if994249/eclipse-workspace/scream-together/scream-together-app/src/aaaaa.mp3"
+    var request = new XMLHttpRequest();
+    request.open("GET", url, true);
+    request.responseType = "arraybuffer";
+    res.send(request.response);
+});
 
 wsServer.on('request', function(request) {
 	  var userID = getUniqueID();

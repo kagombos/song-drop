@@ -16,15 +16,39 @@ class App extends Component {
     this.state = {
     	value: 0
     };
+    
+    this.source = audioContext.createBufferSource();
+    this.gainNode = audioContext.createGain();
+    this.gainNode.gain.value = this.state.value / 100;
+    this.gainNode.connect(audioContext.destination);
+    
+    var url = "http://localhost:5001/aaaaa.mp3"
+    var request = new XMLHttpRequest();
+    request.open("GET", url, true);
+    request.responseType = "arraybuffer";
+    var a = this;
+    
+    request.onload = () => {
+      console.log(request.response);
 
-    this.audio = new Audio(require(".\\sounds\\aaaaa.mp3"));
-    //this.track = audioContext.createMediaElementSource(this.audio);
+      var promise = audioContext.decodeAudioData(request.response).then(function (data) {
+    	console.log(data);
+    	a.source.buffer = data;
+    	a.source.loop = true;
+    	a.source.connect(a.gainNode);
+    	a.source.start(0);
+      }, (e) => { console.log(e); });
+      console.log(promise);
+    }
+    
+    request.send();
+    
     this.playing = false;
     
     this.handleChange = this.handleChange.bind(this);
-    
-    
   }
+  
+  
   
   togglePlay() {
 	  this.playing = !this.playing;
@@ -32,36 +56,20 @@ class App extends Component {
   }
   
   playSoundLoop() {
+	
 	if (this.playing) {
-		this.audio.volume = this.state.value / 100;
-		
-		this.audio.addEventListener('ended', () => {
-			this.audio.currentTime = 0;
-			this.audio.play();
-		}, false);
-		var playPromise = this.audio.play();
-
-	    if (playPromise !== undefined) {
-	      playPromise
-	        .then(_ => {
-	        	console.log("!");
-	        })
-	        .catch(error => {
-	          // Auto-play was prevented
-	          // Show paused UI.
-	          console.log(playPromise);
-	          console.log("playback prevented");
-	        });
-	    }
+		this.gainNode.gain.value = this.state.value / 100;
+		audioContext.resume();		
 	}
 	else {
-		this.audio.currentTime = 0;
-		this.audio.pause();
+		audioContext.suspend();
 	}
   }
   
   onEditorStateChange(val) {
-	this.audio.volume = val / 100;
+	if (this.source !== undefined) {
+	  this.gainNode.gain.value = val / 100;
+	}
 	this.setState({ value: val }, () => { client.send(JSON.stringify(this.state)); });    
   }
   
@@ -76,10 +84,10 @@ class App extends Component {
 	}  
   
   handleChange(value) {
-	  this.audio.volume = value / 100;
+	  //this.audio.volume = value / 100;
 	  this.setState({ value: value });
   }
-
+  
   render() {
 	const sliderStyle = {
 	  'marginLeft': '25%',
