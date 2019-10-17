@@ -14,13 +14,18 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-    	value: 0
+    	volume: 0,
+    	playRate: 0,
+    	pitch: 0
     };
     
     this.source = audioContext.createBufferSource();
+    
     this.gainNode = audioContext.createGain();
-    this.gainNode.gain.value = this.state.value / 100;
+    this.gainNode.gain.value = this.smoothAlgorithm(this.state.volume);
     this.gainNode.connect(audioContext.destination);
+    
+    this.source.playbackRate.value = this.smoothAlgorithm(this.state.playRate);
     
     var url = "http://localhost:5001/aaaaa.mp3"
     var request = new XMLHttpRequest();
@@ -45,10 +50,13 @@ class App extends Component {
     
     this.playing = false;
     
-    this.handleChange = this.handleChange.bind(this);
+    this.handleVolumeChange = this.handleVolumeChange.bind(this);
+    this.handlePlayRateChange = this.handlePlayRateChange.bind(this);
   }
   
-  
+  smoothAlgorithm(val) {
+	  return Math.pow((val / 100), (Math.log(10) / Math.log(2)));
+  }
   
   togglePlay() {
 	  this.playing = !this.playing;
@@ -56,9 +64,8 @@ class App extends Component {
   }
   
   playSoundLoop() {
-	
 	if (this.playing) {
-		this.gainNode.gain.value = this.state.value / 100;
+		this.gainNode.gain.value = this.smoothAlgorithm(this.state.volume);
 		audioContext.resume();		
 	}
 	else {
@@ -66,11 +73,19 @@ class App extends Component {
 	}
   }
   
-  onEditorStateChange(val) {
+  onPlayRateStateChange(val) {
+    if (this.source !== undefined) {
+    	var smoothed = this.smoothAlgorithm(val);
+    	this.source.playbackRate.value = smoothed;
+    }
+    this.setState({ playRate: val }, () => { client.send(JSON.stringify(this.state)); });  
+  }
+  
+  onVolumeStateChange(val) {
 	if (this.source !== undefined) {
-	  this.gainNode.gain.value = val / 100;
+	  this.gainNode.gain.value = this.smoothAlgorithm(val);
 	}
-	this.setState({ value: val }, () => { client.send(JSON.stringify(this.state)); });    
+	this.setState({ volume: val }, () => { client.send(JSON.stringify(this.state)); });    
   }
   
   componentDidMount() {
@@ -79,13 +94,19 @@ class App extends Component {
 	  };
 	  client.onmessage = (message) => {
 	    const dataFromServer = JSON.parse(message.data);
-	    this.handleChange(dataFromServer.value);
+	    this.handleVolumeChange(dataFromServer.volume);
+	    this.handlePlayRateChange(dataFromServer.playRate);
 	  };
 	}  
   
-  handleChange(value) {
-	  //this.audio.volume = value / 100;
-	  this.setState({ value: value });
+  handleVolumeChange(volume) {
+	  this.gainNode.gain.value = this.smoothAlgorithm(volume);
+	  this.setState({ volume: volume });
+  }
+  
+  handlePlayRateChange(playRate) {
+	  this.source.playbackRate.value = this.smoothAlgorithm(playRate);
+	  this.setState({ playRate: playRate });
   }
   
   render() {
@@ -97,16 +118,26 @@ class App extends Component {
       <div className="App">
         <center>
           <h1 id="value">
-          	{this.state.value}
+          	{this.state.volume}
           </h1>
           <div style={sliderStyle}>
-          	<Slider id="slider" 
+          	<Slider id="volSlider" 
           	  onChange={(e, val) => {
-          		  this.onEditorStateChange(val);
+          		  this.onVolumeStateChange(val);
           	  } }
           	  min={0}
-              max={100}
-          	  value={this.state.value}
+              max={200}
+          	  value={this.state.volume}
+          	/>
+          </div>
+          <div style={sliderStyle}>
+          	<Slider id="playSlider" 
+          	  onChange={(e, val) => {
+          		  this.onPlayRateStateChange(val);
+          	  } }
+          	  min={0}
+              max={200}
+          	  value={this.state.playRate}
           	/>
           </div>
           <button type="button" onClick={(e, val) => { this.togglePlay(); }}>Begin</button>

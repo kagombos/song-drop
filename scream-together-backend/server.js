@@ -30,8 +30,10 @@ const wsServer = new webSocketServer({
 });
 
 const clients = {};
+const bannedClients = {};
 
-var value = 0;
+var volume = 0;
+var playRate = 0;
 
 const getUniqueID = () => {
 	const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -45,7 +47,6 @@ const sendMessage = (json) => {
 }
 
 app.get('/sound', (req, res) => { 
-	console.log("AAAAA");
     var url = "file://C:/Users/if994249/eclipse-workspace/scream-together/scream-together-app/src/aaaaa.mp3"
     var request = new XMLHttpRequest();
     request.open("GET", url, true);
@@ -59,12 +60,23 @@ wsServer.on('request', function(request) {
 	  const connection = request.accept(null, request.origin);
 	  clients[userID] = connection;
 	  console.log('connected: ' + userID + ' in ' + Object.getOwnPropertyNames(clients));
-	  connection.sendUTF(JSON.stringify({ value: value }));
+	  connection.sendUTF(JSON.stringify({ volume: volume, playRate: playRate }));
 	  connection.on('message', function(message) {
 		 if (message.type === 'utf8') {
 			 const dataFromClient = JSON.parse(message.utf8Data);
-			 value = dataFromClient.value;
-			 sendMessage(JSON.stringify({ value: value }));
+			 if (bannedClients[userID] !== undefined) {
+				 console.log("bad man");
+			 }
+			 else if (typeof dataFromClient.volume !== 'number' || typeof dataFromClient.playRate !== 'number') {
+				 delete clients[userID];
+				 bannedClients[userID] = connection;
+				 console.log(new Date() + "Peer " + userID + " banned.");
+			 }
+			 else {
+				 volume = dataFromClient.volume;
+				 playRate = dataFromClient.playRate;
+				 sendMessage(JSON.stringify({ volume: volume, playRate: playRate }));
+			 }
 		 } 
 	  });
 	  connection.on('close', function(connection) {
