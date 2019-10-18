@@ -16,9 +16,10 @@ class App extends Component {
     this.state = {
     	volume: 0,
     	playRate: 0,
-    	pitch: 0
+    	pitch: 0,
     };
     
+    this.buttonLabel = 'Begin';
     this.source = audioContext.createBufferSource();
     
     this.gainNode = audioContext.createGain();
@@ -52,6 +53,7 @@ class App extends Component {
     
     this.handleVolumeChange = this.handleVolumeChange.bind(this);
     this.handlePlayRateChange = this.handlePlayRateChange.bind(this);
+    this.togglePlay = this.togglePlay.bind(this);
   }
   
   smoothAlgorithm(val) {
@@ -64,12 +66,15 @@ class App extends Component {
   }
   
   playSoundLoop() {
+	var elem = document.getElementById("toggleButton");
 	if (this.playing) {
 		this.gainNode.gain.value = this.smoothAlgorithm(this.state.volume);
-		audioContext.resume();		
+		audioContext.resume();
+		elem.innerHTML = 'Stop';
 	}
 	else {
 		audioContext.suspend();
+		elem.innerHTML = 'Start';
 	}
   }
   
@@ -115,11 +120,9 @@ class App extends Component {
 	  'marginRight': '25%',
 	};
     return (
-      <div className="App">
+      <div style={{ backgroundImage: `url(require("screaming.png"))` }} className="App">
         <center>
-          <h1 id="value">
-          	{this.state.volume}
-          </h1>
+          <p>Volume</p>
           <div style={sliderStyle}>
           	<Slider id="volSlider" 
           	  onChange={(e, val) => {
@@ -130,6 +133,7 @@ class App extends Component {
           	  value={this.state.volume}
           	/>
           </div>
+          <p>Playback Rate</p>
           <div style={sliderStyle}>
           	<Slider id="playSlider" 
           	  onChange={(e, val) => {
@@ -140,7 +144,7 @@ class App extends Component {
           	  value={this.state.playRate}
           	/>
           </div>
-          <button type="button" onClick={(e, val) => { this.togglePlay(); }}>Begin</button>
+          <button id="toggleButton" type="button" onClick={(e, val) => { this.togglePlay(); }}>Begin</button>
         </center>
       </div>
     );
