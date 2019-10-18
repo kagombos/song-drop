@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const fs = require('fs');
 
 const webSocketServer = require('websocket').server;
 
@@ -35,6 +36,9 @@ const bannedClients = {};
 var volume = 100;
 var playRate = 100;
 
+var playPosition = 0;
+var startTime = new Date();
+
 const getUniqueID = () => {
 	const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
 	return s4() + s4() + '-' + s4();
@@ -47,11 +51,14 @@ const sendMessage = (json) => {
 }
 
 app.get('/sound', (req, res) => { 
-    var url = "file://C:/Users/if994249/eclipse-workspace/scream-together/scream-together-app/src/aaaaa.mp3"
-    var request = new XMLHttpRequest();
-    request.open("GET", url, true);
-    request.responseType = "arraybuffer";
-    res.send(request.response);
+    fs.readdir("public", (e, data) => {
+    	var url = "public/" + data[Math.floor(Math.random() * Math.floor(data.length))];
+    	console.log(url);
+    	fs.readFile(url, (e, data) => {
+    		if (e) throw e;
+    		res.send(data);
+    	});
+    });
 });
 
 wsServer.on('request', function(request) {
@@ -67,14 +74,18 @@ wsServer.on('request', function(request) {
 			 if (bannedClients[userID] !== undefined) {
 				 console.log("bad man");
 			 }
-			 else if (typeof dataFromClient.volume !== 'number' || typeof dataFromClient.playRate !== 'number') {
-				 delete clients[userID];
-				 bannedClients[userID] = connection;
-				 console.log(new Date() + "Peer " + userID + " banned.");
-			 }
+//			 else if (typeof dataFromClient.volume !== 'number' || typeof dataFromClient.playRate !== 'number') {
+//				 delete clients[userID];
+//				 bannedClients[userID] = connection;
+//				 console.log(new Date() + "Peer " + userID + " banned.");
+//			 }
 			 else {
-				 volume = dataFromClient.volume;
-				 playRate = dataFromClient.playRate;
+				 if (dataFromClient.volume !== undefined) {
+					 volume = dataFromClient.volume;					 
+				 }
+				 if (dataFromClient.playRate !== undefined) {
+					 playRate = dataFromClient.playRate;
+				 }
 				 sendMessage(JSON.stringify({ volume: volume, playRate: playRate }));
 			 }
 		 } 

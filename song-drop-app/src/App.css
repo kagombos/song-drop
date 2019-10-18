@@ -1,5 +1,5 @@
 .App {
-  text-align: center;
+	position: relative;
 }
 
 .App-logo {
@@ -19,4 +19,10 @@
 
 .App-link {
   color: #09d3ac;
+}
+
+.Upload {
+  position: absolute;
+  left: 5%;
+  top: 0%;
 }
