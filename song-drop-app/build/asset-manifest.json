@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/song-drop/static/css/main.01637435.chunk.css",
+    "main.js": "/song-drop/static/js/main.5d9580c2.chunk.js",
+    "main.js.map": "/song-drop/static/js/main.5d9580c2.chunk.js.map",
+    "runtime-main.js": "/song-drop/static/js/runtime-main.eb9586d8.js",
+    "runtime-main.js.map": "/song-drop/static/js/runtime-main.eb9586d8.js.map",
+    "static/js/2.8a0d8dad.chunk.js": "/song-drop/static/js/2.8a0d8dad.chunk.js",
+    "static/js/2.8a0d8dad.chunk.js.map": "/song-drop/static/js/2.8a0d8dad.chunk.js.map",
+    "index.html": "/song-drop/index.html",
+    "precache-manifest.13ce6e059fa677d87520895cac43ebfc.js": "/song-drop/precache-manifest.13ce6e059fa677d87520895cac43ebfc.js",
+    "service-worker.js": "/song-drop/service-worker.js",
+    "static/css/main.01637435.chunk.css.map": "/song-drop/static/css/main.01637435.chunk.css.map"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.eb9586d8.js",
+    "static/js/2.8a0d8dad.chunk.js",
+    "static/css/main.01637435.chunk.css",
+    "static/js/main.5d9580c2.chunk.js"
+  ]
+}

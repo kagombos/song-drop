@@ -8,14 +8,6 @@ const webSocketServer = require('websocket').server;
 
 const http = require("http");
 const async = require('async');
-const Pool = require('pg').Pool;
-
-const pool = new Pool({
-	user: 'postgres',
-	host: 'localhost',
-	database: 'scream-together',
-	port: 5432
-})
 
 const server = http.createServer();
 server.listen(5000);
