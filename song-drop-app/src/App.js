@@ -45,14 +45,13 @@ class App extends Component {
   getSound() {
 	  this.source = audioContext.createBufferSource();
 	  
-	  var url = "http://localhost:5001/sound"
+	  var url = "http://172.18.86.35:5001/sound"
       var request = new XMLHttpRequest();
 	  request.open("GET", url, true);
 	  request.responseType = "arraybuffer";
 	  var a = this;
 	  
 	  this.source.onended = function() {
-    	console.log("end");
     	a.getSound();
       }
 	  request.onload = () => {
