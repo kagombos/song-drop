@@ -1,21 +1,21 @@
 {
   "files": {
-    "main.css": "/song-drop/static/css/main.01637435.chunk.css",
-    "main.js": "/song-drop/static/js/main.5d9580c2.chunk.js",
-    "main.js.map": "/song-drop/static/js/main.5d9580c2.chunk.js.map",
-    "runtime-main.js": "/song-drop/static/js/runtime-main.eb9586d8.js",
-    "runtime-main.js.map": "/song-drop/static/js/runtime-main.eb9586d8.js.map",
-    "static/js/2.8a0d8dad.chunk.js": "/song-drop/static/js/2.8a0d8dad.chunk.js",
-    "static/js/2.8a0d8dad.chunk.js.map": "/song-drop/static/js/2.8a0d8dad.chunk.js.map",
-    "index.html": "/song-drop/index.html",
-    "precache-manifest.13ce6e059fa677d87520895cac43ebfc.js": "/song-drop/precache-manifest.13ce6e059fa677d87520895cac43ebfc.js",
-    "service-worker.js": "/song-drop/service-worker.js",
-    "static/css/main.01637435.chunk.css.map": "/song-drop/static/css/main.01637435.chunk.css.map"
+    "main.css": "/song-drop-app/static/css/main.01637435.chunk.css",
+    "main.js": "/song-drop-app/static/js/main.ff9f712d.chunk.js",
+    "main.js.map": "/song-drop-app/static/js/main.ff9f712d.chunk.js.map",
+    "runtime-main.js": "/song-drop-app/static/js/runtime-main.51d7c6ee.js",
+    "runtime-main.js.map": "/song-drop-app/static/js/runtime-main.51d7c6ee.js.map",
+    "static/js/2.347ce375.chunk.js": "/song-drop-app/static/js/2.347ce375.chunk.js",
+    "static/js/2.347ce375.chunk.js.map": "/song-drop-app/static/js/2.347ce375.chunk.js.map",
+    "index.html": "/song-drop-app/index.html",
+    "precache-manifest.b84c6756ae95e5ed77fc7c1001097b1f.js": "/song-drop-app/precache-manifest.b84c6756ae95e5ed77fc7c1001097b1f.js",
+    "service-worker.js": "/song-drop-app/service-worker.js",
+    "static/css/main.01637435.chunk.css.map": "/song-drop-app/static/css/main.01637435.chunk.css.map"
   },
   "entrypoints": [
-    "static/js/runtime-main.eb9586d8.js",
-    "static/js/2.8a0d8dad.chunk.js",
+    "static/js/runtime-main.51d7c6ee.js",
+    "static/js/2.347ce375.chunk.js",
     "static/css/main.01637435.chunk.css",
-    "static/js/main.5d9580c2.chunk.js"
+    "static/js/main.ff9f712d.chunk.js"
   ]
 }

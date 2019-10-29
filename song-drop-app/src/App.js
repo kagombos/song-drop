@@ -7,6 +7,7 @@ import './App.css';
 import PlayRateSlider from './control-sliders/PlayRateSlider';
 import VolumeSlider from './control-sliders/VolumeSlider';
 import Upload from './Upload';
+import TrackList from './track-list/TrackList';
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const audioContext = new AudioContext();
@@ -21,6 +22,9 @@ class App extends Component {
     	volume: 0,
     	playRate: 0,
     	pitch: 0,
+    	playedQueue: null,
+    	unplayedQueue: null,
+    	requestCompleted: false
     };
     
     this.source = audioContext.createBufferSource();
@@ -88,24 +92,38 @@ class App extends Component {
 	  };
 	  client.onmessage = (message) => {
 	    const dataFromServer = JSON.parse(message.data);
-	    this.setState({volume: dataFromServer.volume});
+	    console.log(dataFromServer);
+	    this.setState({ volume: dataFromServer.volume });
 	    this.setState({ playRate: dataFromServer.playRate });
+	    this.setState({ playedQueue: dataFromServer.playedQueue });
+	    this.setState({ unplayedQueue: dataFromServer.unplayedQueue });
+	    this.setState({ requestCompleted: true });
 	  };
 	}  
   
   render() {
-    return (
-      <div className="App">
-        <center>
-          <VolumeSlider gainNode={this.gainNode} volume={this.state.volume} client={client}/>
-          <PlayRateSlider source={this.source} playRate={this.state.playRate} client={client}/>
-          <button id="toggleButton" type="button" onClick={(e, val) => { this.togglePlay(); }}>Begin</button>
-        </center>
-        <div className="Upload">
-          <Upload />
-        </div>
-      </div>
-    );
+	if (this.state.requestCompleted) {
+		return (
+	      <div className="App">
+	        <center>
+	          <VolumeSlider gainNode={this.gainNode} volume={this.state.volume} client={client}/>
+	          <PlayRateSlider source={this.source} playRate={this.state.playRate} client={client}/>
+	          <button id="toggleButton" type="button" onClick={(e, val) => { this.togglePlay(); }}>Begin</button>
+	        </center>
+	        <div className="Upload">
+	          <Upload />
+	        </div>
+	        <div>
+	          <TrackList playedQueue={this.state.playedQueue} unplayedQueue={this.state.unplayedQueue}/>
+	        </div>
+	      </div>
+	    );
+	}
+	else {
+		return (
+			<div>Loading...</div>
+		)
+	}
   }
 }
 

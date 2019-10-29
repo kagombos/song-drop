@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const fs = require('fs');
+const mm = require('music-metadata');
 const IncomingForm = require('formidable').IncomingForm
 
 const webSocketServer = require('websocket').server;
@@ -26,7 +27,12 @@ app.listen(5001, () => {
 	});
 	fs.readdir("public/played", (e, files) => {
 		if (e) console.log(e);
-		data.playedQueue = files;
+		files.map((filename) => {
+			mm.parseFile("public/played/" + filename).then((metadata) => {
+				var song = { name: filename, data: metadata.common, duration: metadata.format.duration };
+				data.playedQueue.push(song);
+			}); 
+		});
 	});
 });
 
@@ -61,7 +67,7 @@ const sendMessage = (json) => {
 app.get('/sound', (req, res) => {
 	var url = "";
 	if (data.unplayedQueue.length > 0) {
-		var songName = data.unplayedQueue.shift();
+		var songName = data.unplayedQueue.shift().name;
 		url = "public/unplayed/" + songName;
 		fs.rename(url, "public/played/" + songName, (e) => {
 			if (e) throw e;
@@ -75,7 +81,7 @@ app.get('/sound', (req, res) => {
 		}
 	}
 	else {
-		url = "public/played/" + data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))];
+		url = "public/played/" + data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))].name;
 	}
     fs.readFile(url, (e, file) => {
     	if (e) throw e;
@@ -89,8 +95,11 @@ app.post('/upload', (req, res) => {
 		var ext = file.name.substring(file.name.length - 3);
 		if (ext == mp3 || ext == wav || ext == aac || ext == ogg) {
 			fs.rename(file.path, __dirname + '\\public\\' + file.name, (err) => {
-				data.unplayedQueue.push(file.name);
-				sendMessage(JSON.stringify(data));
+				mm.parseFile(file.path).then((metadata) => {
+					var song = { name: file.name, data: metadata.common, duration: metadata.format.duration };
+					data.unplayedQueue.push(song);
+					sendMessage(JSON.stringify(data));
+				});
 			});
 		}
 	});

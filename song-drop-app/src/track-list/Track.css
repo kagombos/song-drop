@@ -1,0 +1,30 @@
+.shortened {
+	width: 15%;
+	background-color: #46506b;
+  color: #eeeeee;
+  font-size: small;
+  overflow: hidden;
+  display: block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-all;
+}
+
+.expanded {
+	background-color: #46506b;
+  color: #eeeeee;
+  font-size: small;
+  overflow: hidden;
+  display: block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 15%;
+  max-width: max-content;
+  word-break: break-all;
+}
+
+.overflow {
+	text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
