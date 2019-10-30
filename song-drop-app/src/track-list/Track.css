@@ -1,6 +1,30 @@
+.trackList {
+	border: solid 4px #212633;
+  border-right-style: none;
+  border-bottom-style: none;
+	position: relative;
+	top: 50px;
+	left: 50px;
+	width: 25%;
+	height: content-max;
+	max-height: 500px;
+	display: block;
+}
+
+.trackListScroll {
+	top: -1px;
+	position: relative;
+	direction: rtl;
+	overflow-y: auto;
+	width: 200%;
+  height: 100%;
+}
+
+.trackListContent {
+  direction: ltr;
+}
+
 .shortened {
-	width: 15%;
-	background-color: #46506b;
   color: #eeeeee;
   font-size: small;
   overflow: hidden;
@@ -8,19 +32,29 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   word-break: break-all;
+  width: 50%;
+  border: "solid 1px #212633";
 }
 
 .expanded {
-	background-color: #46506b;
   color: #eeeeee;
   font-size: small;
   overflow: hidden;
   display: block;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 15%;
-  max-width: max-content;
   word-break: break-all;
+  min-width: 50%;
+  width: max-content;
+  border: "solid 1px black";
+}
+
+.unplayed {
+	background-color: #67779e;
+}
+
+.played {
+	background-color: #46506b;
 }
 
 .overflow {

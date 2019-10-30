@@ -3,6 +3,11 @@ import { Slider } from '@material-ui/core';
 
 class VolumeSlider extends Component {
 	
+	constructor() {
+		super();
+		this.lastTime = new Date();
+	}
+	
 	componentDidUpdate() {
 		this.handleVolumeChange(this.props.volume);
 	}
@@ -12,7 +17,7 @@ class VolumeSlider extends Component {
 	}
 	
 	onVolumeStateChange(val) {
-		this.setState({ volume: val }, () => { this.props.client.send(JSON.stringify(this.state)); });    
+		this.setState({ volume: val }, () => { this.props.client.send(JSON.stringify({volume: this.state.volume})); });    
 	}
 	
     handleVolumeChange(volume) {
@@ -31,8 +36,14 @@ class VolumeSlider extends Component {
 		  <div style={sliderStyle}>
 		  	<Slider id="slider" 
 		  	  onChange={(e, val) => {
+		  		  if (new Date() - this.lastTime > 10) {
+		  			  this.onVolumeStateChange(val);
+		  			  this.lastTime = new Date();
+		  		  }
+		  	  }}
+		  	  onChangeCommitted={(e, val) => {
 		  		  this.onVolumeStateChange(val);
-		  	  } }
+		  	  }}
 		  	  min={0}
 		      max={200}
 		  	  value={this.props.volume}

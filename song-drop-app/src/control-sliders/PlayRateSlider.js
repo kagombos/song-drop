@@ -3,6 +3,11 @@ import { Slider } from '@material-ui/core';
 
 class PlayRateSlider extends Component {
 	
+	constructor() {
+		super();
+		this.lastTime = new Date();
+	}
+	
 	componentDidUpdate() {
 		this.handlePlayRateChange(this.props.playRate);
 	}
@@ -12,7 +17,7 @@ class PlayRateSlider extends Component {
 	}
 	
 	onPlayRateStateChange(val) {
-	    this.setState({ playRate: val }, () => { this.props.client.send(JSON.stringify(this.state)); });  
+	    this.setState({ playRate: val }, () => { this.props.client.send(JSON.stringify({playRate: this.state.playRate})); });  
 	  }
 	
     handlePlayRateChange(playRate) {
@@ -31,8 +36,14 @@ class PlayRateSlider extends Component {
 		  <div style={sliderStyle}>
 		  	<Slider id="slider" 
 		  	  onChange={(e, val) => {
+		  		  if (new Date() - this.lastTime > 10) {
+		  			  this.onPlayRateStateChange(val);
+		  			  this.lastTime = new Date();
+		  		  }
+		  	  }}
+		  	  onChangeCommitted={(e, val) => {
 		  		  this.onPlayRateStateChange(val);
-		  	  } }
+		  	  }}
 		  	  min={0}
 		      max={200}
 		  	  value={this.props.playRate}

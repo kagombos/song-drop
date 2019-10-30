@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import Track from './Track';
+import './Track.css';
 
 class TrackList extends Component {
 	
@@ -12,10 +13,17 @@ class TrackList extends Component {
 	
 	render () {
 		return (
-			<div>
-				{this.playedQueue ? this.playedQueue.map((item, index) => (
-					<Track key={index} item={item} />
-				)):"test"}
+			<div className="trackList">
+				<div className="trackListScroll">
+					<div className="trackListContent">
+						{this.unplayedQueue ? this.unplayedQueue.map((item, index) => (
+							<Track unplayed={true} key={index} item={item} />
+						)):"test"}
+						{this.playedQueue ? this.playedQueue.map((item, index) => (
+							<Track unplayed={false} key={index} item={item} />
+						)):"test"}
+					</div>
+				</div>
 			</div>
 		);
 	}

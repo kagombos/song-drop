@@ -70,8 +70,12 @@ class App extends Component {
   }
   
   togglePlay() {
+	  var url = "http:// 172.18.86.35:5001/togglepause"
 	  this.playing = !this.playing;
 	  this.playSoundLoop();
+	  var request = new XMLHttpRequest();
+	  request.open("GET", url, true);
+	  request.send();
   }
   
   playSoundLoop() {
@@ -92,7 +96,6 @@ class App extends Component {
 	  };
 	  client.onmessage = (message) => {
 	    const dataFromServer = JSON.parse(message.data);
-	    console.log(dataFromServer);
 	    this.setState({ volume: dataFromServer.volume });
 	    this.setState({ playRate: dataFromServer.playRate });
 	    this.setState({ playedQueue: dataFromServer.playedQueue });
@@ -113,9 +116,7 @@ class App extends Component {
 	        <div className="Upload">
 	          <Upload />
 	        </div>
-	        <div>
-	          <TrackList playedQueue={this.state.playedQueue} unplayedQueue={this.state.unplayedQueue}/>
-	        </div>
+	        <TrackList playedQueue={this.state.playedQueue} unplayedQueue={this.state.unplayedQueue}/>
 	      </div>
 	    );
 	}

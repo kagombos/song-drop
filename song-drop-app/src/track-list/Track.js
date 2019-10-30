@@ -9,9 +9,14 @@ class Track extends Component {
 		super();
 		this.state = {
 			isHidden: true,
+			playState: "unplayed",
 			songData: props.item.data,
 			songName: props.item.name,
 			songDuration: props.item.duration
+		}
+		
+		if (!props.unplayed) {
+			this.state.playState = "played";
 		}
 		
 		if (this.state.songData.title !== undefined) {
@@ -33,7 +38,7 @@ class Track extends Component {
 	
 	render () {
 		return (
-			<div className={this.state.isHidden ? "shortened" : "expanded"} style={{position: "relative", border: "solid 1px black", top: "50px" }} onMouseLeave={(e, val) => { this.hide(this); }} onMouseEnter={(e, val) => { this.expand(this); }}>
+			<div className={(this.state.isHidden ? "shortened" : "expanded") + " " + this.state.playState} style={{position: "relative", border: "solid 1px #212633" }} onMouseLeave={(e, val) => { this.hide(this); }} onMouseEnter={(e, val) => { this.expand(this); }}>
 				{this.state.isHidden && <Hidden data={this.state.songData} name={this.state.songName} duration={this.state.songDuration}/>}
 				{!this.state.isHidden && <Expanded data={this.state.songData} name={this.state.songName} duration={this.state.songDuration}/>}
 			</div>
@@ -42,12 +47,12 @@ class Track extends Component {
 }
 
 const Hidden = (props) => (
-	<div className="overflow">{ props.name }</div>
+	<div className="overflow" >{ props.name }</div>
 )
 
 const Expanded = (props) => (
 	<div>
-		<div>Title: { props.name }</div>
+		<strong>Title: { props.name }</strong>
 		{props.duration ? <div>Duration: { moment().startOf('day').seconds(props.duration).format('mm:ss') }</div> : ''}
 		{props.data.album ? <div>Album: { props.data.album }</div> : ''}
 		{props.data.artist ? <div>Artist: { props.data.artist }</div> : ''}
