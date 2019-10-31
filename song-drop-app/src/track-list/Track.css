@@ -2,8 +2,8 @@
 	border: solid 4px #212633;
   border-right-style: none;
   border-bottom-style: none;
-	position: relative;
-	top: 50px;
+	position: absolute;
+	top: 25%;
 	left: 50px;
 	width: 25%;
 	height: content-max;

@@ -7,8 +7,6 @@ class TrackList extends Component {
 	constructor(props) {
 		super();
 		console.log(props);
-		this.unplayedQueue = props.unplayedQueue;
-		this.playedQueue = props.playedQueue;
 	}
 	
 	render () {
@@ -16,10 +14,10 @@ class TrackList extends Component {
 			<div className="trackList">
 				<div className="trackListScroll">
 					<div className="trackListContent">
-						{this.unplayedQueue ? this.unplayedQueue.map((item, index) => (
+						{this.props.unplayedQueue ? this.props.unplayedQueue.map((item, index) => (
 							<Track unplayed={true} key={index} item={item} />
 						)):"test"}
-						{this.playedQueue ? this.playedQueue.map((item, index) => (
+						{this.props.playedQueue ? this.props.playedQueue.map((item, index) => (
 							<Track unplayed={false} key={index} item={item} />
 						)):"test"}
 					</div>

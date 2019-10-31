@@ -21,6 +21,13 @@ var data = {
 	unplayedQueue: []
 }
 
+var playData = {
+	play: false,
+	update: false,
+	currentPos: 0,
+	duration: 0
+}
+
 const wsServer = new webSocketServer({
 	httpServer: server
 });
@@ -32,10 +39,10 @@ var volume = 100;
 var playRate = 100;
 
 var currentSong = null;
+var currentFile = null;
 var firstPlay = false;
 var startTime = new Date();
-var currentPos = 0;
-var play = false;
+var pauseTime = new Date();
 
 const getNextSong = () => {
 	if (firstPlay) {
@@ -60,30 +67,33 @@ const getNextSong = () => {
 		currentSong = data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))]
 		url = "public/played/" + currentSong.name;
 	}
+	playData.duration = currentSong.duration;
     fs.readFile(url, (e, file) => {
     	if (e) throw e;
-    	res.send(file);
+    	currentFile = file;
     });
 }
 
 const playSong = () => {
-	if (play && currentSong === null) {
+	if (isEmpty(clients)) {
+		return;
+	}
+	if (playData.play && (currentSong === null || currentSong === undefined)) {
 		getNextSong();
-		startTime = new Date();
+		startTime = new Date().getTime();
 	}
-	else if (play && currentPos > currentSong.duration) {
+	else if (playData.play && (playData.currentPos > currentSong.duration || currentSong.duration === undefined)) {
+		console.log("????");
 		getNextSong();
-		startTime = new Date();
-		currentPos = 0;
+		startTime = new Date().getTime();
+		playData.currentPos = 0;
 	}
-	else if (play) {
-		currentPos = new Date() - startTime;
+	else if (playData.play) {
+		playData.currentPos = (new Date().getTime() - startTime) / 1000;
+		console.log("pos:" + playData.currentPos + " duration:" + currentSong.duration + " play: " + playData.play);
 	}
-	if (currentSong !== null) {
-		console.log("pos:" + currentPos + " duration:" + currentSong.duration);
-	}
-	console.log("aaa");
-	return Promise.delay(500).then(() => playSong());
+	sendMessage(JSON.stringify(playData));
+	return Promise.delay(40).then(() => playSong());
 } 
 
 app.listen(5001, () => {
@@ -122,28 +132,19 @@ const sendMessage = (json) => {
 }
 
 app.get('/sound', (req, res) => {
-	var url = "";
-	if (data.unplayedQueue.length > 0) {
-		currentSong = data.unplayedQueue.shift();
-		url = "public/unplayed/" + currentSong.name;
-		data.playedQueue.push(currentSong);
-		if (data.playedQueue.length > 10) {
-			fs.unlink("public/played/" + data.playedQueue.shift().name, (e) => {
-				if (e) throw e;
-			});
-		}
-	}
-	else {
-		url = "public/played/" + data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))].name;
-	}
-    fs.readFile(url, (e, file) => {
-    	if (e) throw e;
-    	res.send(file);
-    });
+	res.send(currentFile);
 });
 
 app.get('/togglepause', (req, res) => {
-	play = !play;
+	if (playData.play) {
+		pauseTime = new Date().getTime();
+	}
+	else {
+		startTime = new Date().getTime() - playData.currentPos * 1000;
+	}
+	playData.play = !playData.play;
+	sendMessage(JSON.stringify(playData));
+	res.send();
 });
 
 app.post('/upload', (req, res) => {
@@ -180,12 +181,16 @@ wsServer.on('request', function(request) {
 	  const connection = request.accept(null, request.origin);
 	  console.log(clients);
 	  if (isEmpty(clients)) {
+		  clients[userID] = connection;
 		  console.log("haha");
 		  playSong();
 	  }
-	  clients[userID] = connection;
+	  else {
+		  clients[userID] = connection;
+	  }
 	  console.log('connected: ' + userID + ' in ' + Object.getOwnPropertyNames(clients));
 	  connection.sendUTF(JSON.stringify(data));
+	  console.log(data);
 	  connection.on('message', function(message) {
 		 if (message.type === 'utf8') {
 			 const dataFromClient = JSON.parse(message.utf8Data);
@@ -200,12 +205,16 @@ wsServer.on('request', function(request) {
 			 else {
 				 //console.log(dataFromClient);
 				 if (dataFromClient.volume !== undefined) {
-					 data.volume = dataFromClient.volume;					 
+					 data.volume = dataFromClient.volume;
+					 sendMessage(JSON.stringify(data));
 				 }
-				 if (dataFromClient.playRate !== undefined) {
-					 data.playRate = dataFromClient.playRate;
+				 if (dataFromClient.currentPos !== undefined) {
+					 startTime = (new Date().getTime() / 1000 - dataFromClient.currentPos) * 1000;
+					 playData.currentPos = dataFromClient.currentPos;
+					 playData.update = true;
+					 sendMessage(JSON.stringify(playData));
+					 playData.update = false;
 				 }
-				 sendMessage(JSON.stringify(data));
 			 }
 		 } 
 	  });

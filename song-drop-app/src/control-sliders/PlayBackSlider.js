@@ -2,17 +2,24 @@ import React, { Component } from "react";
 import { Slider } from '@material-ui/core';
 
 class PlayBackSlider extends Component {
-  
-  componentDidUpdate() {
-    this.handlePlayBackChange(this.props.playRate);
-  }
-  
-  onPlayBackStateChange(val) {
-      this.setState({ playBack: val }, () => { this.props.client.send(JSON.stringify(this.state)); });  
+
+    constructor(props) {
+      super();
+      this.state = {
+        currentPos: 0
+      }
+      
+      this.state.currentPos = props.currentPos;
+      this.locked = true;
     }
   
-    handlePlayRateChange(playBack) {
-      this.props.source.playbackRate.value = this.smoothAlgorithm(playBack);
+    onPlayBackStateChange(val) {
+      this.locked = false;
+      this.setState({ currentPos: val });
+    }
+    
+    onPlayBackStateChangeCommitted(val) {
+      this.setState({ currentPos: val }, () => { this.props.client.send(JSON.stringify(this.state)); console.log(this.state.currentPos); this.locked = true;});
     }
   
   render() {
@@ -20,18 +27,21 @@ class PlayBackSlider extends Component {
       'marginLeft': '25%',
       'marginRight': '25%',
     };
-    //this.props.gainNode.gain.value = this.smoothAlgorithm(volume);
+    var value = this.locked ? this.props.currentPos : this.state.currentPos;
     return (
     <div className="PlayBackSlider">
-      <p>Play Rate</p>
       <div style={sliderStyle}>
         <Slider id="slider" 
+          aria-labelledby="continuous-slider"
           onChange={(e, val) => {
             this.onPlayBackStateChange(val);
           } }
+          onChangeCommitted={(e, val) => {
+            this.onPlayBackStateChangeCommitted(val);
+          } }
           min={0}
-          max={200}
-          value={this.props.source.}
+          max={this.props.duration}
+          value={value}
         />
       </div>
     </div>
