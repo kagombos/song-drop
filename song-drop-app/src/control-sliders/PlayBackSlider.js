@@ -24,8 +24,8 @@ class PlayBackSlider extends Component {
   
   render() {
     const sliderStyle = {
-      'marginLeft': '25%',
-      'marginRight': '25%',
+      'marginLeft': '10%',
+      'marginRight': '10%',
     };
     var value = this.locked ? this.props.currentPos : this.state.currentPos;
     return (

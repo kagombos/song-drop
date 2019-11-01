@@ -21,21 +21,20 @@ class App extends Component {
     super(props);
     this.state = {
     	volume: 0,
-    	playRate: 0,
     	playedQueue: null,
     	unplayedQueue: null,
     	requestCompleted: false,
     	currentPos: 0,
     	duration: 0,
-    	play: false
+    	play: false,
+    	songName: "test"
     };
     
     this.source = audioContext.createBufferSource();
+    this.sourceStarted = false;
     
     this.gainNode = audioContext.createGain();
     this.gainNode.connect(audioContext.destination);
-    
-    this.getSound();
     
     this.togglePlay = this.togglePlay.bind(this);
   }
@@ -52,48 +51,46 @@ class App extends Component {
 	  request.open("GET", url, true);
 	  request.responseType = "arraybuffer";
 	  var a = this;
-	  
-	  this.source.onended = function() {
-    	a.getSound();
-      }
-	  request.onload = () => {
+	  request.onloadend = () => {
+		  console.log(request);
 		  audioContext.decodeAudioData(request.response).then(function (data) {
 			  a.source.buffer = data;
 			  a.source.connect(a.gainNode);
-			  if (a.state.play) {
+			  if (a.state.play && !a.sourceStarted) {
 				  a.source.start(0, a.state.currentPos);
+				  a.sourceStarted = true;
 			  }
 		  }, (e) => { console.log(e); });
   	  }
 	  request.send();
   }
   
-  setNewSource(stopOld) {
-	  if (stopOld) {
+  setNewSource() {
+	  console.log("setting new source...")
+	  if (this.sourceStarted) {
 		  this.source.stop();
+		  this.sourceStarted = false;
 	  }
-	  var newSource = audioContext.createBufferSource();
-	  newSource.buffer = this.source.buffer;
-	  newSource.connect(this.gainNode);
-	  this.source = newSource;
+	  var oldSource = this.source;
+	  this.source = audioContext.createBufferSource();
+	  this.source.buffer = oldSource.buffer;
+	  this.source.connect(this.gainNode);
   }
   
   startPlay() {
-	  if (this.state.play) {
-		  audioContext.resume();
-	  }
-	  else {
-		  this.setNewSource();
-	  }
+	  this.getSound();
   }
   
   togglePlay() {
 	  var url = "http://172.18.86.35:5001/togglepause";
-	  this.state.play = !this.state.play;
-	  this.playSoundLoop();
-	  var request = new XMLHttpRequest();
-	  request.open("GET", url, true);
-	  request.send();
+	  this.setState({
+		  play: !this.state.play
+	  }, () => {
+		  this.playSoundLoop();
+		  var request = new XMLHttpRequest();
+		  request.open("GET", url, true);
+		  request.send();
+	  })
   }
   
   playSoundLoop() {
@@ -101,13 +98,14 @@ class App extends Component {
 	if (this.state.play) {
 		this.setNewSource();
 		this.source.start(0, this.state.currentPos); 
+		this.sourceStarted = true;
 		elem.innerHTML = 'Stop';
 	}
 	else {
-		try {
+		if (this.sourceStarted) {
 			this.source.stop();
+			this.sourceStarted = false;
 		}
-		catch (e) {};
 		elem.innerHTML = 'Start';
 	}
   }
@@ -121,9 +119,6 @@ class App extends Component {
 	    if (dataFromServer.volume !== undefined) {
 	    	this.setState({ volume: dataFromServer.volume });	    	
 	    }
-	    if (dataFromServer.playRate !== undefined) {
-	    	this.setState({ playRate: dataFromServer.playRate });	    	
-	    }
 	    if (dataFromServer.playedQueue !== undefined) {
 	    	this.setState({ playedQueue: dataFromServer.playedQueue });    	
 	    }
@@ -131,6 +126,9 @@ class App extends Component {
 	    	this.setState({ unplayedQueue: dataFromServer.unplayedQueue });    	
 	    }
 	    
+	    if (dataFromServer.songName !== undefined) {
+	    	this.setState({ songName: dataFromServer.songName });
+	    }
 	    if (dataFromServer.currentPos !== undefined) {
 	    	this.setState({ currentPos: dataFromServer.currentPos });
 	    }
@@ -142,10 +140,15 @@ class App extends Component {
 	    }
 	    if (dataFromServer.update !== undefined) {
 	    	if (dataFromServer.update) {
-	    		this.setNewSource(true);
-		    	if (this.state.play) {
-		    		this.source.start(0, this.state.currentPos); 
-		    	}
+	    		console.log(this);
+	    		this.playSoundLoop();
+	    	}
+	    }
+	    if (dataFromServer.newSong !== undefined) {
+	    	if (dataFromServer.newSong) {
+	    		this.source.stop();
+	    		this.sourceStarted = false;
+	    		this.getSound();
 	    	}
 	    }
 	    this.setState({ requestCompleted: true });
@@ -161,10 +164,11 @@ class App extends Component {
 	          <div style={{position: "absolute", top: "50%", width: "100%"}}>
 	          	<button id="startButton" type="button" onClick={(e, val) => {this.startPlay();}}>Begin</button>
 	          </div>
-	          <div style={{position: "absolute", top: "90%", width: "100%"}}>
+	          <center className="player">
+	          	<p>{this.state.songName}</p>
 	          	<PlayBackSlider play={this.state.play} currentPos={this.state.currentPos} duration={this.state.duration} client={client}/>
 	          	<button id="toggleButton" type="button" onClick={(e, val) => { this.togglePlay(); }}>Stop</button>
-	          </div>
+	          </center>
 	        </center>
 	        <div className="Upload">
 	          <Upload />

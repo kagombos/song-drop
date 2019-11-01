@@ -49,7 +49,12 @@ class Upload extends Component {
 
   render() {
     return (
-      <Dropzone onFilesAdded={this.onFilesAdded} disabled={false} />
+      <center style={{border: "solid 1px black", backgroundColor: "#67779e", padding: "20px"}}>
+      	<Dropzone onFilesAdded={this.onFilesAdded} disabled={false} />
+      	<div style={{padding: "20px"}}>
+      	  <input />
+      	</div>
+      </center>
     );
   }
 

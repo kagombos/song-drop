@@ -24,8 +24,10 @@ var data = {
 var playData = {
 	play: false,
 	update: false,
+	newSong: false,
 	currentPos: 0,
-	duration: 0
+	duration: 0,
+	songName: "test"
 }
 
 const wsServer = new webSocketServer({
@@ -44,7 +46,7 @@ var firstPlay = false;
 var startTime = new Date();
 var pauseTime = new Date();
 
-const getNextSong = () => {
+const getNextSong = (callback) => {
 	if (firstPlay) {
 		fs.rename("public/unplayed/" + currentSong.name, "public/played/" + currentSong.name, (e) => {
 			if (e) throw e;
@@ -67,30 +69,43 @@ const getNextSong = () => {
 		currentSong = data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))]
 		url = "public/played/" + currentSong.name;
 	}
+	
+	if (currentSong.data.title != null) {
+		playData.songName = currentSong.data.title;
+	}
+	else {
+		playData.songName = currentSong.name;
+	}
 	playData.duration = currentSong.duration;
     fs.readFile(url, (e, file) => {
     	if (e) throw e;
     	currentFile = file;
+    	callback();
     });
+    sendMessage(JSON.stringify(data));
 }
 
 const playSong = () => {
+	playData.newSong = false;
 	if (isEmpty(clients)) {
 		return;
 	}
 	if (playData.play && (currentSong === null || currentSong === undefined)) {
-		getNextSong();
+		getNextSong(() => {});
 		startTime = new Date().getTime();
 	}
 	else if (playData.play && (playData.currentPos > currentSong.duration || currentSong.duration === undefined)) {
 		console.log("????");
-		getNextSong();
-		startTime = new Date().getTime();
-		playData.currentPos = 0;
+		getNextSong(() => {
+			startTime = new Date().getTime();
+			playData.currentPos = 0;
+			playData.newSong = true;
+			sendMessage(JSON.stringify(playData));
+		});
 	}
 	else if (playData.play) {
 		playData.currentPos = (new Date().getTime() - startTime) / 1000;
-		console.log("pos:" + playData.currentPos + " duration:" + currentSong.duration + " play: " + playData.play);
+		console.log(playData);
 	}
 	sendMessage(JSON.stringify(playData));
 	return Promise.delay(40).then(() => playSong());
@@ -101,8 +116,10 @@ app.listen(5001, () => {
 		if (e) console.log(e);
 		files.map((filename) => {
 			mm.parseFile("public/unplayed/" + filename).then((metadata) => {
-				var song = { name: filename, data: metadata.common, duration: metadata.format.duration };
-				data.unplayedQueue.push(song);
+				if (metadata.format.duration !== null && metadata.format.duration !== undefined) {
+					var song = { name: filename, data: metadata.common, duration: metadata.format.duration };
+					data.unplayedQueue.push(song);
+				}
 			}); 
 		});
 	});
@@ -110,8 +127,10 @@ app.listen(5001, () => {
 		if (e) console.log(e);
 		files.map((filename) => {
 			mm.parseFile("public/played/" + filename).then((metadata) => {
-				var song = { name: filename, data: metadata.common, duration: metadata.format.duration };
-				data.playedQueue.push(song);
+				if (metadata.format.duration !== null && metadata.format.duration !== undefined) {
+					var song = { name: filename, data: metadata.common, duration: metadata.format.duration };
+					data.playedQueue.push(song);
+				}
 			}); 
 		});
 	});
@@ -132,7 +151,16 @@ const sendMessage = (json) => {
 }
 
 app.get('/sound', (req, res) => {
-	res.send(currentFile);
+	if (currentFile === null) {
+		getNextSong(() => {
+			console.log(currentFile);
+			res.send(currentFile);
+		});
+	}
+	else {
+		console.log(currentFile);
+		res.send(currentFile);
+	}
 });
 
 app.get('/togglepause', (req, res) => {
@@ -151,9 +179,10 @@ app.post('/upload', (req, res) => {
 	var form = new IncomingForm();
 	form.on('file', (field, file) => {
 		var ext = file.name.substring(file.name.length - 3);
-		if (ext == mp3 || ext == wav || ext == aac || ext == ogg) {
-			fs.rename(file.path, __dirname + '\\public\\' + file.name, (err) => {
-				mm.parseFile(file.path).then((metadata) => {
+		if (ext === 'mp3' || ext === 'wav' || ext === 'aac' || ext === 'ogg') {
+			var newPath = __dirname + '\\public\\unplayed\\' + file.name;
+			fs.rename(file.path, newPath, (err) => {
+				mm.parseFile(newPath).then((metadata) => {
 					var song = { name: file.name, data: metadata.common, duration: metadata.format.duration };
 					data.unplayedQueue.push(song);
 					sendMessage(JSON.stringify(data));
@@ -190,7 +219,6 @@ wsServer.on('request', function(request) {
 	  }
 	  console.log('connected: ' + userID + ' in ' + Object.getOwnPropertyNames(clients));
 	  connection.sendUTF(JSON.stringify(data));
-	  console.log(data);
 	  connection.on('message', function(message) {
 		 if (message.type === 'utf8') {
 			 const dataFromClient = JSON.parse(message.utf8Data);

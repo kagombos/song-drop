@@ -3,8 +3,8 @@
   border-right-style: none;
   border-bottom-style: none;
 	position: absolute;
-	top: 25%;
-	left: 50px;
+	top: 30px;
+	left: 30px;
 	width: 25%;
 	height: content-max;
 	max-height: 500px;
@@ -16,7 +16,7 @@
 	position: relative;
 	direction: rtl;
 	overflow-y: auto;
-	width: 200%;
+	width: 150%;
   height: 100%;
 }
 
@@ -32,7 +32,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   word-break: break-all;
-  width: 50%;
+  width: 65%;
   border: "solid 1px #212633";
 }
 
@@ -44,7 +44,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   word-break: break-all;
-  min-width: 50%;
+  min-width: 65%;
   width: max-content;
   border: "solid 1px black";
 }
