@@ -52,7 +52,6 @@ class App extends Component {
 	  request.responseType = "arraybuffer";
 	  var a = this;
 	  request.onloadend = () => {
-		  console.log(request);
 		  audioContext.decodeAudioData(request.response).then(function (data) {
 			  a.source.buffer = data;
 			  a.source.connect(a.gainNode);
@@ -87,10 +86,11 @@ class App extends Component {
 		  play: !this.state.play
 	  }, () => {
 		  this.playSoundLoop();
-		  var request = new XMLHttpRequest();
-		  request.open("GET", url, true);
-		  request.send();
+		  client.send(JSON.stringify({ play: this.state.play }));
 	  })
+  }
+  skip() {
+	  client.send(JSON.stringify({ currentPos: this.state.duration }));
   }
   
   playSoundLoop() {
@@ -139,9 +139,13 @@ class App extends Component {
 	    	this.setState({ play: dataFromServer.play });
 	    }
 	    if (dataFromServer.update !== undefined) {
-	    	if (dataFromServer.update) {
-	    		console.log(this);
+	    	if (dataFromServer.update === "pos") {
 	    		this.playSoundLoop();
+	    	}
+	    	if (dataFromServer.update === "pause") {
+	    		this.setState({ play: dataFromServer.play }, () => {
+	    			this.playSoundLoop();
+	    		});
 	    	}
 	    }
 	    if (dataFromServer.newSong !== undefined) {
@@ -168,6 +172,7 @@ class App extends Component {
 	          	<p>{this.state.songName}</p>
 	          	<PlayBackSlider play={this.state.play} currentPos={this.state.currentPos} duration={this.state.duration} client={client}/>
 	          	<button id="toggleButton" type="button" onClick={(e, val) => { this.togglePlay(); }}>Stop</button>
+	          	<button id="skip" type="button" onClick={(e, val) => { this.skip(); }}>Skip</button>
 	          </center>
 	        </center>
 	        <div className="Upload">

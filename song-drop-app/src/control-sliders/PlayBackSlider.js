@@ -19,7 +19,7 @@ class PlayBackSlider extends Component {
     }
     
     onPlayBackStateChangeCommitted(val) {
-      this.setState({ currentPos: val }, () => { this.props.client.send(JSON.stringify(this.state)); console.log(this.state.currentPos); this.locked = true;});
+      this.setState({ currentPos: val }, () => { this.props.client.send(JSON.stringify(this.state)); this.locked = true;});
     }
   
   render() {
