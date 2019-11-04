@@ -10,6 +10,16 @@ const webSocketServer = require('websocket').server;
 
 const http = require("http");
 const async = require('async');
+const YoutubeMp3Downloader = require("youtube-mp3-downloader");
+const ytSearch = require('./youtube-search');
+
+var YD = new YoutubeMp3Downloader({
+    "ffmpegPath": "public/ffmpeg",        // Where is the FFmpeg binary located?
+    "outputPath": "public/unplayed",    // Where should the downloaded and encoded files be stored?
+    "youtubeVideoQuality": "highest",       // What video quality should be used?
+    "queueParallelism": 2,                  // How many parallel downloads/encodes should be started?
+    "progressTimeout": 2000                 // How long should be the interval of the progress reports
+});
 
 const server = http.createServer();
 server.listen(5000);
@@ -23,7 +33,7 @@ var data = {
 
 var playData = {
 	play: false,
-	update: false,
+	update: "",
 	newSong: false,
 	currentPos: 0,
 	duration: 0,
@@ -86,6 +96,7 @@ const getNextSong = (callback) => {
 }
 
 const playSong = () => {
+	//console.log(playData);
 	playData.newSong = false;
 	if (isEmpty(clients)) {
 		return;
@@ -95,7 +106,6 @@ const playSong = () => {
 		startTime = new Date().getTime();
 	}
 	else if (playData.play && (playData.currentPos > currentSong.duration || currentSong.duration === undefined)) {
-		console.log("????");
 		getNextSong(() => {
 			startTime = new Date().getTime();
 			playData.currentPos = 0;
@@ -105,7 +115,6 @@ const playSong = () => {
 	}
 	else if (playData.play) {
 		playData.currentPos = (new Date().getTime() - startTime) / 1000;
-		console.log(playData);
 	}
 	sendMessage(JSON.stringify(playData));
 	return Promise.delay(40).then(() => playSong());
@@ -153,12 +162,10 @@ const sendMessage = (json) => {
 app.get('/sound', (req, res) => {
 	if (currentFile === null) {
 		getNextSong(() => {
-			console.log(currentFile);
 			res.send(currentFile);
 		});
 	}
 	else {
-		console.log(currentFile);
 		res.send(currentFile);
 	}
 });
@@ -176,24 +183,36 @@ app.get('/togglepause', (req, res) => {
 });
 
 app.post('/upload', (req, res) => {
-	var form = new IncomingForm();
-	form.on('file', (field, file) => {
-		var ext = file.name.substring(file.name.length - 3);
-		if (ext === 'mp3' || ext === 'wav' || ext === 'aac' || ext === 'ogg') {
-			var newPath = __dirname + '\\public\\unplayed\\' + file.name;
-			fs.rename(file.path, newPath, (err) => {
-				mm.parseFile(newPath).then((metadata) => {
-					var song = { name: file.name, data: metadata.common, duration: metadata.format.duration };
-					data.unplayedQueue.push(song);
-					sendMessage(JSON.stringify(data));
-				});
-			});
-		}
-	});
-	form.on('end', () => {
+	console.log(req.query.link);
+	var link = req.query.link;
+	ytSearch.getTopResult(link);
+	if (link !== undefined && link !== "") {
+//		YD.download(link);
+//		YD.on("finished", (err, data) => {
+//			res.json();
+//		});
 		res.json();
-	});
-	form.parse(req);
+	}
+	else {
+		var form = new IncomingForm();
+		form.on('file', (field, file) => {
+			var ext = file.name.substring(file.name.length - 3);
+			if (ext === 'mp3' || ext === 'wav' || ext === 'aac' || ext === 'ogg') {
+				var newPath = __dirname + '\\public\\unplayed\\' + file.name;
+				fs.rename(file.path, newPath, (err) => {
+					mm.parseFile(newPath).then((metadata) => {
+						var song = { name: file.name, data: metadata.common, duration: metadata.format.duration };
+						data.unplayedQueue.push(song);
+						sendMessage(JSON.stringify(data));
+					});
+				});
+			}
+		});
+		form.on('end', () => {
+			res.json();
+		});
+		form.parse(req);
+	}
 });
 
 const isEmpty = (obj) => {
@@ -208,10 +227,8 @@ wsServer.on('request', function(request) {
 	  var userID = getUniqueID();
 	  console.log((new Date()) + ' Recieved a new connection from origin ' + request.origin + '.');
 	  const connection = request.accept(null, request.origin);
-	  console.log(clients);
 	  if (isEmpty(clients)) {
 		  clients[userID] = connection;
-		  console.log("haha");
 		  playSong();
 	  }
 	  else {
@@ -239,9 +256,24 @@ wsServer.on('request', function(request) {
 				 if (dataFromClient.currentPos !== undefined) {
 					 startTime = (new Date().getTime() / 1000 - dataFromClient.currentPos) * 1000;
 					 playData.currentPos = dataFromClient.currentPos;
-					 playData.update = true;
+					 playData.update = "pos";
 					 sendMessage(JSON.stringify(playData));
-					 playData.update = false;
+					 playData.update = "";
+				 }
+				 if (dataFromClient.play !== undefined) {
+					 if (dataFromClient.play !== playData.play) {
+						 if (playData.play) {
+							 pauseTime = new Date().getTime();
+						 }
+						 else {
+							 startTime = new Date().getTime() - playData.currentPos * 1000;
+						 }
+						 
+						 playData.play = dataFromClient.play;
+						 playData.update = "pause";
+						 sendMessage(JSON.stringify(playData));
+						 playData.update = "";
+					 }
 				 }
 			 }
 		 } 
