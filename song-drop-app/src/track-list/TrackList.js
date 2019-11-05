@@ -6,7 +6,6 @@ class TrackList extends Component {
 	
 	constructor(props) {
 		super();
-		console.log(props);
 	}
 	
 	render () {

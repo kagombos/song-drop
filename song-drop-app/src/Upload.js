@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import Dropzone from './dropzone/Dropzone';
+import properties from './properties.js';
 
 class Upload extends Component {
 
@@ -44,7 +45,7 @@ class Upload extends Component {
       const formData = new FormData();
       formData.append("file", file, file.name);
       
-      req.open("POST", "http://172.18.86.35:5001/upload");
+      req.open("POST", properties.serverAddress + "/upload");
       req.send(formData);
     });
   }
@@ -62,10 +63,10 @@ class Upload extends Component {
 	  var link = this.getParameterByName("v", this.state.youtubeLink);
 	  const req = new XMLHttpRequest();	  
 	  if (link === "" || link === null) {
-		  req.open("POST", "http://172.18.86.35:5001/upload?link=" + this.state.youtubeLink);
+		  req.open("POST", properties.serverAddress + "/upload?link=" + this.state.youtubeLink);
 	  }
 	  else {
-		  req.open("POST", "http://172.18.86.35:5001/upload?link=" + link);
+		  req.open("POST", properties.serverAddress + "/upload?link=" + link);
 	  }
 	  req.send();
   }

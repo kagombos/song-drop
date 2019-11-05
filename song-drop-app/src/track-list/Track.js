@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import './Track.css';
 import moment from 'moment';
+import properties from './../properties.js';
 
 
 class Track extends Component {
@@ -11,9 +12,12 @@ class Track extends Component {
 			isHidden: true,
 			playState: "unplayed",
 			songData: props.item.data,
+			fileName: props.item.name,
 			songName: props.item.name,
 			songDuration: props.item.duration
 		}
+		
+		console.log(props.item.data);
 		
 		if (!props.unplayed) {
 			this.state.playState = "played";
@@ -36,9 +40,19 @@ class Track extends Component {
 		});
 	}
 	
+	play() {
+		const req = new XMLHttpRequest();	  
+		req.open("GET", properties.serverAddress + "/play?fileName=" + this.state.fileName);
+		req.send();
+	}
+	
 	render () {
 		return (
-			<div className={(this.state.isHidden ? "shortened" : "expanded") + " " + this.state.playState} style={{position: "relative", border: "solid 1px #212633" }} onMouseLeave={(e, val) => { this.hide(this); }} onMouseEnter={(e, val) => { this.expand(this); }}>
+			<div className={(this.state.isHidden ? "shortened" : "expanded") + " " + this.state.playState}
+			     style={{position: "relative", border: "solid 1px #212633" }} 
+				 onMouseLeave={(e, val) => { this.hide(this); }} 
+			     onMouseEnter={(e, val) => { this.expand(this); }}
+			     onClick={(e, val) => { this.play(); }}>
 				{this.state.isHidden && <Hidden data={this.state.songData} name={this.state.songName} duration={this.state.songDuration}/>}
 				{!this.state.isHidden && <Expanded data={this.state.songData} name={this.state.songName} duration={this.state.songDuration}/>}
 			</div>

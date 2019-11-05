@@ -50,68 +50,113 @@ const bannedClients = {};
 var volume = 100;
 var playRate = 100;
 
+var songHistoryList = [];
+var nextSong = null;
 var currentSong = null;
+
+var nextFile = null;
 var currentFile = null;
 var firstPlay = false;
 var startTime = new Date();
 var pauseTime = new Date();
 
-const getNextSong = (callback) => {
-	if (firstPlay) {
-		fs.rename("public/unplayed/" + currentSong.name, "public/played/" + currentSong.name, (e) => {
+const shiftQueues = () => {
+	data.playedQueue.push(data.unplayedQueue.shift());
+	if (data.playedQueue.length > 10) {
+		fs.unlink("public/played/" + data.playedQueue.shift().name, (e) => {
 			if (e) throw e;
 		});
-		firstPlay = false;
 	}
-	var url = "";
+}
+
+const getNextSongFromList = () => {
+	var nextSong = null;
 	if (data.unplayedQueue.length > 0) {
-		firstPlay = true;
-		currentSong = data.unplayedQueue.shift();
-		url = "public/unplayed/" + currentSong.name;
-		data.playedQueue.push(currentSong);
-		if (data.playedQueue.length > 10) {
-			fs.unlink("public/played/" + data.playedQueue.shift().name, (e) => {
-				if (e) throw e;
-			});
+		nextSong = data.unplayedQueue[0];
+		if (nextSong === currentSong) {
+			nextSong = data.unplayedQueue[1];
 		}
 	}
 	else {
-		currentSong = data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))]
-		url = "public/played/" + currentSong.name;
+		nextSong = data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))];
+	}
+	return nextSong;
+}
+
+const getNextSong = () => {
+	if (currentSong !== null && !currentSong.played) {
+		currentSong.played = true;
+		shiftQueues();
+		fs.rename("public/unplayed/" + currentSong.name, "public/played/" + currentSong.name, (e) => {
+			if (e) throw e;
+		});
 	}
 	
-	if (currentSong.data.title != null) {
-		playData.songName = currentSong.data.title;
+	if (currentSong !== null) {
+		songHistoryList.push(currentSong.name);
 	}
-	else {
-		playData.songName = currentSong.name;
+	
+	currentSong = nextSong;
+	currentFile = nextFile;
+	nextSong = getNextSongFromList();
+	
+	if (currentSong !== null) {
+		var url = "";
+		if (currentSong.played) {
+			url = "public/played/" + currentSong.name;
+		}
+		else {
+			url = "public/unplayed/" + currentSong.name;
+		}
+		
+		if (currentSong.data.title !== null && currentSong.data.title !== undefined) {
+			playData.songName = currentSong.data.title;
+		}
+		else {
+			playData.songName = currentSong.name;
+		}
+		playData.duration = currentSong.duration;
+		
+    	startTime = new Date().getTime();
+		playData.currentPos = 0;
+		playData.newSong = true;
+		sendMessage(JSON.stringify(playData));
+	    sendMessage(JSON.stringify(data));
+	    playData.newSong = false;
+	    //console.log(songHistoryList);
 	}
-	playData.duration = currentSong.duration;
-    fs.readFile(url, (e, file) => {
-    	if (e) throw e;
-    	currentFile = file;
-    	callback();
-    });
-    sendMessage(JSON.stringify(data));
+	
+	if (nextSong !== null) {
+		var url = "";
+		if (nextSong.played) {
+			url = "public/played/" + nextSong.name;
+		}
+		else {
+			url = "public/unplayed/" + nextSong.name;
+		}
+		fs.readFile(url, (e, file) => {
+	    	if (e) throw e;
+	    	nextFile = file;
+	    	playData.update = "next";
+			sendMessage(JSON.stringify(playData));
+			playData.update = "";
+	    });
+	}
 }
 
 const playSong = () => {
+	//console.log(playData.songName);
 	//console.log(playData);
-	playData.newSong = false;
+//	console.log(currentSong);
 	if (isEmpty(clients)) {
 		return;
 	}
-	if (playData.play && (currentSong === null || currentSong === undefined)) {
-		getNextSong(() => {});
+	if (currentSong === null || currentSong === undefined) {
+		getNextSong();
 		startTime = new Date().getTime();
 	}
 	else if (playData.play && (playData.currentPos > currentSong.duration || currentSong.duration === undefined)) {
-		getNextSong(() => {
-			startTime = new Date().getTime();
-			playData.currentPos = 0;
-			playData.newSong = true;
-			sendMessage(JSON.stringify(playData));
-		});
+		getNextSong();
 	}
 	else if (playData.play) {
 		playData.currentPos = (new Date().getTime() - startTime) / 1000;
@@ -126,7 +171,7 @@ app.listen(5001, () => {
 		files.map((filename) => {
 			mm.parseFile("public/unplayed/" + filename).then((metadata) => {
 				if (metadata.format.duration !== null && metadata.format.duration !== undefined) {
-					var song = { name: filename, data: metadata.common, duration: metadata.format.duration };
+					var song = { name: filename, data: metadata.common, duration: metadata.format.duration, played: false };
 					data.unplayedQueue.push(song);
 				}
 			}); 
@@ -137,7 +182,7 @@ app.listen(5001, () => {
 		files.map((filename) => {
 			mm.parseFile("public/played/" + filename).then((metadata) => {
 				if (metadata.format.duration !== null && metadata.format.duration !== undefined) {
-					var song = { name: filename, data: metadata.common, duration: metadata.format.duration };
+					var song = { name: filename, data: metadata.common, duration: metadata.format.duration, played: true };
 					data.playedQueue.push(song);
 				}
 			}); 
@@ -159,14 +204,26 @@ const sendMessage = (json) => {
 	});
 }
 
+app.get('/play', (req, res) => {
+	if (req.query.fileName !== undefined && req.query.fileName !== null) {
+		playData.currentPos = currentSong.duration + 1;
+		res.send();
+	}
+});
+
 app.get('/sound', (req, res) => {
-	if (currentFile === null) {
-		getNextSong(() => {
-			res.send(currentFile);
-		});
+	if (req.query.next !== null && req.query.next) {
+		res.send(nextFile);
 	}
 	else {
-		res.send(currentFile);
+		if (currentFile === null) {
+			getNextSong(() => {
+				res.send(currentFile);
+			});
+		}
+		else {
+			res.send(currentFile);
+		}
 	}
 });
 
@@ -236,6 +293,7 @@ wsServer.on('request', function(request) {
 	  }
 	  console.log('connected: ' + userID + ' in ' + Object.getOwnPropertyNames(clients));
 	  connection.sendUTF(JSON.stringify(data));
+	  connection.sendUTF(JSON.stringify(playData));
 	  connection.on('message', function(message) {
 		 if (message.type === 'utf8') {
 			 const dataFromClient = JSON.parse(message.utf8Data);
