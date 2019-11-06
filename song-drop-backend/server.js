@@ -28,13 +28,13 @@ var data = {
 	volume: 100,
 	playRate: 100,
 	playedQueue: [],
-	unplayedQueue: []
+	unplayedQueue: [],
+	currentSong: null
 }
 
 var playData = {
 	play: false,
 	update: "",
-	newSong: false,
 	currentPos: 0,
 	duration: 0,
 	songName: "test"
@@ -52,7 +52,6 @@ var playRate = 100;
 
 var songHistoryList = [];
 var nextSong = null;
-var currentSong = null;
 
 var nextFile = null;
 var currentFile = null;
@@ -60,8 +59,19 @@ var firstPlay = false;
 var startTime = new Date();
 var pauseTime = new Date();
 
-const shiftQueues = () => {
-	data.playedQueue.push(data.unplayedQueue.shift());
+const shiftUnplayed = () => {
+	data.unplayedQueue.shift();
+}
+
+const shiftPlayed = () => {
+	var index = data.playedQueue.findIndex((song) => {
+		song === data.currentSong;
+	});
+	data.playedQueue.splice(index);
+}
+
+const sendCurrentToPlayed = () => {
+	data.playedQueue.push(data.currentSong);
 	if (data.playedQueue.length > 10) {
 		fs.unlink("public/played/" + data.playedQueue.shift().name, (e) => {
 			if (e) throw e;
@@ -73,9 +83,9 @@ const getNextSongFromList = () => {
 	var nextSong = null;
 	if (data.unplayedQueue.length > 0) {
 		nextSong = data.unplayedQueue[0];
-		if (nextSong === currentSong) {
-			nextSong = data.unplayedQueue[1];
-		}
+//		if (nextSong === currentSong) {
+//			nextSong = data.unplayedQueue[1];
+//		}
 	}
 	else {
 		nextSong = data.playedQueue[Math.floor(Math.random() * Math.floor(data.playedQueue.length))];
@@ -84,49 +94,52 @@ const getNextSongFromList = () => {
 }
 
 const getNextSong = () => {
-	if (currentSong !== null && !currentSong.played) {
-		currentSong.played = true;
-		shiftQueues();
-		fs.rename("public/unplayed/" + currentSong.name, "public/played/" + currentSong.name, (e) => {
+	if (data.currentSong !== null && data.currentSong !== undefined && !data.currentSong.played) {
+		data.currentSong.played = true;
+		fs.rename("public/unplayed/" + data.currentSong.name, "public/played/" + data.currentSong.name, (e) => {
 			if (e) throw e;
 		});
 	}
 	
-	if (currentSong !== null) {
-		songHistoryList.push(currentSong.name);
+	if (data.currentSong !== null) {
+		sendCurrentToPlayed();
+		songHistoryList.push(data.currentSong.name);
 	}
 	
-	currentSong = nextSong;
+	data.currentSong = nextSong;
 	currentFile = nextFile;
 	nextSong = getNextSongFromList();
+	//console.log(data.currentSong);
 	
-	if (currentSong !== null) {
+	if (data.currentSong !== null && data.currentSong !== undefined) {
 		var url = "";
-		if (currentSong.played) {
-			url = "public/played/" + currentSong.name;
+		if (data.currentSong.played) {
+			url = "public/played/" + data.currentSong.name;
+			shiftPlayed();
 		}
 		else {
-			url = "public/unplayed/" + currentSong.name;
+			url = "public/unplayed/" + data.currentSong.name;
+			shiftUnplayed();
 		}
 		
-		if (currentSong.data.title !== null && currentSong.data.title !== undefined) {
-			playData.songName = currentSong.data.title;
+		if (data.currentSong.data.title !== null && data.currentSong.data.title !== undefined) {
+			playData.songName = data.currentSong.data.title;
 		}
 		else {
-			playData.songName = currentSong.name;
+			playData.songName = data.currentSong.name;
 		}
-		playData.duration = currentSong.duration;
+		playData.duration = data.currentSong.duration;
 		
     	startTime = new Date().getTime();
 		playData.currentPos = 0;
-		playData.newSong = true;
+		playData.update = "newSong";
 		sendMessage(JSON.stringify(playData));
 	    sendMessage(JSON.stringify(data));
-	    playData.newSong = false;
+	    playData.update = "";
 	    //console.log(songHistoryList);
 	}
 	
-	if (nextSong !== null) {
+	if (nextSong !== null && nextSong !== undefined) {
 		var url = "";
 		if (nextSong.played) {
 			url = "public/played/" + nextSong.name;
@@ -147,15 +160,15 @@ const getNextSong = () => {
 const playSong = () => {
 	//console.log(playData.songName);
 	//console.log(playData);
-//	console.log(currentSong);
+//	console.log(data.currentSong);
 	if (isEmpty(clients)) {
 		return;
 	}
-	if (currentSong === null || currentSong === undefined) {
+	if (data.currentSong === null || data.currentSong === undefined) {
 		getNextSong();
 		startTime = new Date().getTime();
 	}
-	else if (playData.play && (playData.currentPos > currentSong.duration || currentSong.duration === undefined)) {
+	else if (playData.play && (playData.currentPos > data.currentSong.duration || data.currentSong.duration === undefined)) {
 		getNextSong();
 	}
 	else if (playData.play) {
@@ -188,6 +201,9 @@ app.listen(5001, () => {
 			}); 
 		});
 	});
+	setTimeout(() => {
+		getNextSong();
+	}, 1000);
 });
 
 app.use(cors());
@@ -206,13 +222,33 @@ const sendMessage = (json) => {
 
 app.get('/play', (req, res) => {
 	if (req.query.fileName !== undefined && req.query.fileName !== null) {
-		playData.currentPos = currentSong.duration + 1;
+		var url = "";
+		var unplayed = data.unplayedQueue.filter((song) => {return song.name === req.query.fileName;});
+		if (unplayed.length === 1) {
+			url = "public/unplayed/" + req.query.fileName;
+		}
+		else {
+			url = "public/played/" + req.query.fileName;
+		}
+		var played = data.playedQueue.filter((song) => {return song.name === req.query.fileName;});
+		var filtered = unplayed.concat(played);
+		if (filtered.length === 1) {
+			nextSong = filtered[0];
+			fs.readFile(url, (e, file) => {
+		    	if (e) throw e;
+		    	nextFile = file;
+		    	playData.currentPos = data.currentSong.duration + 1;
+		    	playData.update = "select";
+				sendMessage(JSON.stringify(playData));
+				playData.update = "";
+		    });
+		}
 		res.send();
 	}
 });
 
 app.get('/sound', (req, res) => {
-	if (req.query.next !== null && req.query.next) {
+	if (req.query.next !== null && req.query.next !== undefined && req.query.next) {
 		res.send(nextFile);
 	}
 	else {
@@ -240,7 +276,6 @@ app.get('/togglepause', (req, res) => {
 });
 
 app.post('/upload', (req, res) => {
-	console.log(req.query.link);
 	var link = req.query.link;
 	ytSearch.getTopResult(link);
 	if (link !== undefined && link !== "") {

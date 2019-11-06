@@ -57,6 +57,10 @@
 	background-color: #46506b;
 }
 
+.current {
+	background-color: #ffffff;
+}
+
 .overflow {
 	text-overflow: ellipsis;
   white-space: nowrap;

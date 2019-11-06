@@ -24,6 +24,7 @@ class App extends Component {
     	volume: 0,
     	playedQueue: null,
     	unplayedQueue: null,
+    	currentSong: null,
     	requestCompleted: false,
     	currentPos: 0,
     	duration: 0,
@@ -32,6 +33,7 @@ class App extends Component {
     };
     
     this.nextBuffer = null;
+    this.useNextBuffer = true;
     
     this.source = audioContext.createBufferSource();
     this.sourceStarted = false;
@@ -46,9 +48,9 @@ class App extends Component {
 	return Math.pow((val / 100), (Math.log(10) / Math.log(2)));
   }
   
-  getSound(useNextBuffer) {
+  getSound() {
 	  this.source = audioContext.createBufferSource();
-	  if (useNextBuffer && this.nextBuffer !== null && this.nextBuffer !== undefined) {
+	  if (this.useNextBuffer && this.nextBuffer !== null && this.nextBuffer !== undefined) {
 		  this.source.buffer = this.nextBuffer;
 		  this.nextBuffer = null;
 		  this.source.connect(this.gainNode);
@@ -80,6 +82,7 @@ class App extends Component {
 	  request.onloadend = () => {
 		  audioContext.decodeAudioData(request.response).then((data) => {
 			  a.nextBuffer = data;
+			  this.useNextBuffer = true;
 		  }, (e) => {console.log(e); });
 	  }
 	  request.send();
@@ -97,8 +100,7 @@ class App extends Component {
   }
   
   startPlay() {
-	  this.getSound(true);
-	  this.getNextBuffer();
+	  this.getSound();
   }
   
   togglePlay() {
@@ -145,6 +147,9 @@ class App extends Component {
 	    if (dataFromServer.unplayedQueue !== undefined) {
 	    	this.setState({ unplayedQueue: dataFromServer.unplayedQueue });    	
 	    }
+	    if (dataFromServer.currentSong !== undefined) {
+	    	this.setState({ currentSong: dataFromServer.currentSong });
+	    }
 	    
 	    if (dataFromServer.songName !== undefined) {
 	    	this.setState({ songName: dataFromServer.songName });
@@ -171,14 +176,15 @@ class App extends Component {
 	    	if (dataFromServer.update === "next") {
 	    		this.getNextBuffer();
 	    	}
-	    }
-	    if (dataFromServer.newSong !== undefined) {
-	    	if (dataFromServer.newSong) {
+	    	if (dataFromServer.update === "select") {
+	    		this.useNextBuffer = false;
+	    	}
+	    	if (dataFromServer.update === "newSong") {
 	    		if (this.state.play) {
 	    			this.source.stop();
 		    		this.sourceStarted = false;
 	    		}
-	    		this.getSound(true);
+	    		this.getSound();
 	    	}
 	    }
 	    this.setState({ requestCompleted: true });
@@ -204,7 +210,7 @@ class App extends Component {
 	        <div className="Upload">
 	          <Upload />
 	        </div>
-	        <TrackList playedQueue={this.state.playedQueue} unplayedQueue={this.state.unplayedQueue}/>
+	        <TrackList playedQueue={this.state.playedQueue} unplayedQueue={this.state.unplayedQueue} currentSong={this.state.currentSong}/>
 	      </div>
 	    );
 	}

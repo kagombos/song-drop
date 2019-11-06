@@ -13,11 +13,12 @@ class TrackList extends Component {
 			<div className="trackList">
 				<div className="trackListScroll">
 					<div className="trackListContent">
+						<Track playState="current" key="0" item={this.props.currentSong} />
 						{this.props.unplayedQueue ? this.props.unplayedQueue.map((item, index) => (
-							<Track unplayed={true} key={index} item={item} />
+							<Track playState="unplayed" key={index} item={item} />
 						)):"test"}
 						{this.props.playedQueue ? this.props.playedQueue.map((item, index) => (
-							<Track unplayed={false} key={index} item={item} />
+							<Track playState="played" key={index} item={item} />
 						)):"test"}
 					</div>
 				</div>

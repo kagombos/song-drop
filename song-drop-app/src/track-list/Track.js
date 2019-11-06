@@ -9,22 +9,7 @@ class Track extends Component {
 	constructor(props) {
 		super();
 		this.state = {
-			isHidden: true,
-			playState: "unplayed",
-			songData: props.item.data,
-			fileName: props.item.name,
-			songName: props.item.name,
-			songDuration: props.item.duration
-		}
-		
-		console.log(props.item.data);
-		
-		if (!props.unplayed) {
-			this.state.playState = "played";
-		}
-		
-		if (this.state.songData.title !== undefined) {
-			this.state.songName = this.state.songData.title;
+			isHidden: true
 		}
 	}
 	
@@ -48,14 +33,14 @@ class Track extends Component {
 	
 	render () {
 		return (
-			<div className={(this.state.isHidden ? "shortened" : "expanded") + " " + this.state.playState}
-			     style={{position: "relative", border: "solid 1px #212633" }} 
-				 onMouseLeave={(e, val) => { this.hide(this); }} 
-			     onMouseEnter={(e, val) => { this.expand(this); }}
-			     onClick={(e, val) => { this.play(); }}>
-				{this.state.isHidden && <Hidden data={this.state.songData} name={this.state.songName} duration={this.state.songDuration}/>}
-				{!this.state.isHidden && <Expanded data={this.state.songData} name={this.state.songName} duration={this.state.songDuration}/>}
-			</div>
+				<div className={(this.state.isHidden ? "shortened" : "expanded") + " " + this.props.playState}
+			        style={{position: "relative", border: "solid 1px #212633" }} 
+				    onMouseLeave={(e, val) => { this.hide(this); }} 
+			        onMouseEnter={(e, val) => { this.expand(this); }}
+			        onClick={(e, val) => { this.play(); }}>
+				  {this.state.isHidden && this.props.item && <Hidden data={this.props.item.data} name={this.props.item.data.title ? this.props.item.data.title : this.props.item.name } duration={this.props.item.duration}/>}
+				  {!this.state.isHidden && this.props.item && <Expanded data={this.props.item.data} name={this.props.item.data.title ? this.props.item.data.title : this.props.item.name } duration={this.props.item.duration}/>}
+				</div>
 		)
 	}
 }
